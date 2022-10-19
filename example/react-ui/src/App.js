@@ -6,7 +6,8 @@ import {
   NotificationManager
 } from "react-notifications";
 import "react-notifications/lib/notifications.css";
-
+import Biconomy from "@biconomy/mexa";
+// import Biconomy from "@biconomy";
 import Web3 from "web3";
 let sigUtil = require("eth-sig-util");
 const { config } = require("./config");
@@ -48,18 +49,30 @@ function App() {
         // Ethereum user detected. You can now use the provider.
         const provider = window["ethereum"];
         await provider.enable();
-        if (provider.networkVersion === "3") {
-          domainData.chainId = 3;
-          web3 = new Web3(provider);
+        if (provider.networkVersion === "5") {
+          domainData.chainId = 5;          
 
-          contract = new web3.eth.Contract(
-            config.contract.abi,
-            config.contract.address
-          );
-          setSelectedAddress(provider.selectedAddress);
-          getQuoteFromNetwork();
-          provider.on("accountsChanged", function(accounts) {
-            setSelectedAddress(accounts[0]);
+          const biconomy = new Biconomy(provider, {
+            apiKey: "XbOXzsULA.a0ba6f80-cb77-408c-a74c-876eaf6d47be",
+            debug: true,
+          });       
+
+           web3 = new Web3(biconomy);
+
+          biconomy.onEvent(biconomy.READY, () => {
+            // Initialize your dapp here like getting user accounts etc
+            contract = new web3.eth.Contract(
+              config.contract.abi,
+              config.contract.address
+            );
+            setSelectedAddress(provider.selectedAddress);
+            getQuoteFromNetwork();
+            provider.on("accountsChanged", function (accounts) {
+              setSelectedAddress(accounts[0]);
+            });
+          }).onEvent(biconomy.ERROR, (error, message) => {
+            // Handle error while initializing mexa
+            console.log(error)          
           });
         } else {
           showErrorMessage("Please change the network in metamask to Ropsten");
